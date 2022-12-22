@@ -8,6 +8,7 @@ import { AuthNavigatorRoutesProps } from "@routes/auth.routes";
 import * as yup from "yup";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useAuth } from "@hooks/useAuth";
 type FormDataProps = {
   email: string;
   password: string;
@@ -21,6 +22,7 @@ const signInSchema = yup.object({
     .min(6, "A senha deve ter pelo menos 6 digitos.")
 });
 export function SignIn() {
+  const { signIn } = useAuth();
   const navigation = useNavigation<AuthNavigatorRoutesProps>();
   const {
     control,
@@ -30,8 +32,8 @@ export function SignIn() {
     resolver: yupResolver(signInSchema)
   });
 
-  function handleSignIn(data: FormDataProps) {
-    console.log(data);
+  function handleSignIn({ email, password }: FormDataProps) {
+    signIn(email, password);
   }
 
   function handleNewAccount() {
