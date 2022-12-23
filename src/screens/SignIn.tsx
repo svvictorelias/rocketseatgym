@@ -1,4 +1,12 @@
-import { VStack, Image, Text, Center, Heading, ScrollView } from "native-base";
+import {
+  VStack,
+  Image,
+  Text,
+  Center,
+  Heading,
+  ScrollView,
+  useToast
+} from "native-base";
 import { useNavigation } from "@react-navigation/native";
 import LogoSvg from "@assets/logo.svg";
 import BackgroundImg from "@assets/background.png";
@@ -9,6 +17,8 @@ import * as yup from "yup";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useAuth } from "@hooks/useAuth";
+import { AppError } from "@utils/AppError";
+import { useState } from "react";
 type FormDataProps = {
   email: string;
   password: string;
@@ -22,6 +32,7 @@ const signInSchema = yup.object({
     .min(6, "A senha deve ter pelo menos 6 digitos.")
 });
 export function SignIn() {
+  const toast = useToast();
   const { signIn } = useAuth();
   const navigation = useNavigation<AuthNavigatorRoutesProps>();
   const {
@@ -31,9 +42,20 @@ export function SignIn() {
   } = useForm<FormDataProps>({
     resolver: yupResolver(signInSchema)
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSignIn({ email, password }: FormDataProps) {
-    signIn(email, password);
+  async function handleSignIn({ email, password }: FormDataProps) {
+    try {
+      setIsLoading(true);
+      await signIn(email, password);
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError
+        ? error.message
+        : "Não foi possivel entrar. Tente novamente mais tarde";
+      setIsLoading(false);
+      toast.show({ title, placement: "bottom", bgColor: "red.500" });
+    }
   }
 
   function handleNewAccount() {
@@ -92,7 +114,11 @@ export function SignIn() {
               />
             )}
           />
-          <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
+          <Button
+            title="Acessar"
+            onPress={handleSubmit(handleSignIn)}
+            isLoading={isLoading}
+          />
         </Center>
         <Center mt={12}>
           <Text color="gray.100" fontSize="sm" mb={3} fontFamily="body">
