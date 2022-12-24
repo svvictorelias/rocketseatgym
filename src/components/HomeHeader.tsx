@@ -4,6 +4,7 @@ import { UserPhoto } from "./UserPhoto";
 import { TouchableOpacity } from "react-native";
 import { useAuth } from "@hooks/useAuth";
 import defaultUserPhotoImg from "@assets/userPhotoDefault.png";
+import { api } from "@services/api";
 export function HomeHeader() {
   const { user, signOut } = useAuth();
   return (
@@ -13,7 +14,7 @@ export function HomeHeader() {
         alt="Imagem do usuário"
         source={
           user.avatar
-            ? { uri: "https://github.com/svvictorelias.png" }
+            ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
             : defaultUserPhotoImg
         }
         mr={4}

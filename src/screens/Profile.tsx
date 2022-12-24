@@ -21,6 +21,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useAuth } from "@hooks/useAuth";
 import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
+import defaultUserPhotoImg from "@assets/userPhotoDefault.png";
 
 const PHOTO_SIZE = 33;
 
@@ -57,9 +58,6 @@ const profileSchema = yup.object({
 export function Profile() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
-  const [userPhoto, setUserPhoto] = useState(
-    "https://github.com/svvictorelias.png"
-  );
   const toast = useToast();
   const { user, updateUserProfile } = useAuth();
   const {
@@ -96,9 +94,44 @@ export function Profile() {
           bgColor: "red.500"
         });
       }
-      setUserPhoto(photoSelected.assets[0].uri);
+      const fileExtension = photoSelected.assets[0].uri.split(".").pop();
+      const photoFile = {
+        name: `${user.name}.${fileExtension}`.toLowerCase(),
+        uri: photoSelected.assets[0].uri,
+        type: `${photoSelected.assets[0].type}/${fileExtension}`
+      } as any;
+
+      const userPhotoUploadForm = new FormData();
+      userPhotoUploadForm.append("avatar", photoFile);
+      const avatarUpdatedResponse = await api.patch(
+        "/users/avatar",
+        userPhotoUploadForm,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+      );
+      const userUpdated = user;
+      userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+      updateUserProfile(userUpdated);
+      toast.show({
+        title: "Foto atualizada.",
+        placement: "bottom",
+        bgColor: "green.500"
+      });
+      console.log(userUpdated);
     } catch (error) {
       console.log(error);
+      const isAppErro = error instanceof AppError;
+      const title = isAppErro
+        ? error.message
+        : "Não foi possivel atualizar a foto.";
+      toast.show({
+        title,
+        placement: "bottom",
+        bgColor: "red.500"
+      });
     } finally {
       setPhotoIsLoading(false);
     }
@@ -146,7 +179,11 @@ export function Profile() {
           ) : (
             <UserPhoto
               size={PHOTO_SIZE}
-              source={{ uri: userPhoto }}
+              source={
+                user.avatar
+                  ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                  : defaultUserPhotoImg
+              }
               alt="foto do usuario"
             />
           )}
